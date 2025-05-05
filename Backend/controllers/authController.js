@@ -5,6 +5,9 @@ const { User } = require('../models');
 // Admin Signup
 exports.signup = async (req, res) => {
   try {
+    const present_user = await User.findOne({ where: { email: req.body.email } });
+    if (present_user) return res.status(404).json({ message: 'This email already exist with another user' });
+
     const hashedPassword = bcrypt.hashSync(req.body.password, 10);
     const user = await User.create({
       email: req.body.email,

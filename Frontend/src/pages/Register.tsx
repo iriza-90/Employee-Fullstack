@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Input, Button } from '../components/ui/form-elements';
 import AuthLayout from '../components/layout/AuthLayout';
 import { useAuth } from '../contexts/AuthContext';
+import {ClipLoader} from "react-spinners";
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -130,14 +131,21 @@ const Register: React.FC = () => {
           autoComplete="new-password"
           required
         />
-        
+
         <Button
-          type="submit"
-          fullWidth
-          isLoading={isLoading}
+            type="submit"
+            fullWidth
+            disabled={isLoading}
         >
-          Create Account
+          {isLoading ? (
+              <div className="flex justify-center items-center">
+                <ClipLoader size={20} color="#ffffff" />
+              </div>
+          ) : (
+              'Create Account'
+          )}
         </Button>
+
       </form>
     </AuthLayout>
   );

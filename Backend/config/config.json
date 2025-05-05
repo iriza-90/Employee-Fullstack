@@ -1,26 +1,26 @@
 {
   "development": {
     "username": "postgres",
-    "password": "ihms@J1976",
+    "password": "1000005",
     "database": "rtb",
     "host": "127.0.0.1",
     "dialect": "postgres",
-    "port": "5434"
+    "port": "5432"
   },
   "test": {
     "username": "postgres",
-    "password": "ihms@J1976",
+    "password": "1000005",
     "database": "rtb",
     "host": "127.0.0.1",
     "dialect": "postgres",
-    "port": "5434"
+    "port": "5432"
   },
   "production": {
     "username": "postgres",
-    "password": "ihms@J1976",
+    "password": "1000005",
     "database": "rtb",
     "host": "127.0.0.1",
     "dialect": "postgres",
-    "port": "5434"
+    "port": "5432"
   }
 }

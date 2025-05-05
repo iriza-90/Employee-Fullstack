@@ -12,7 +12,7 @@ exports.signup = async (req, res) => {
     });
     res.status(201).json({ message: 'Admin created!' });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -20,19 +20,19 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const user = await User.findOne({ where: { email: req.body.email } });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
     const validPass = bcrypt.compareSync(req.body.password, user.password);
-    if (!validPass) return res.status(401).json({ error: 'Invalid password' });
+    if (!validPass) return res.status(401).json({ message: 'Invalid password' });
 
     const token = jwt.sign(
         { id: user.id }, 
         process.env.JWT_SECRET,
         { expiresIn: '40m' }
       );
-    res.json({ token });
+    res.json({ token,user });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 

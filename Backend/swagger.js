@@ -9,7 +9,7 @@ const options = {
       version: '1.0.0',
       description: 'Employee Management System API'
     },
-    servers: [{ url: 'http://localhost:5000/api-docs' }],
+    servers: [{ url: 'http://localhost:5000/api' }],
     components: {
       securitySchemes: {
         bearerAuth: {

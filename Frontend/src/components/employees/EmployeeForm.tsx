@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useEmployees, Employee } from '../../contexts/EmployeeContext';
-import { Button, Input, Select, FormGroup } from '../ui/form-elements';
+import { Button, Input, FormGroup } from '../ui/form-elements';
 
 interface EmployeeFormProps {
   employee?: Employee;
@@ -14,22 +13,21 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ employee, isEdit = false })
   const { addEmployee, updateEmployee } = useEmployees();
 
   const [formData, setFormData] = useState({
-    name: employee?.name || '',
-    email: employee?.email || '',
-    position: employee?.position || '',
-    department: employee?.department || '',
-    joinDate: employee?.joinDate || new Date().toISOString().split('T')[0],
-    phone: employee?.phone || '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    position: '',
+    salary: '',
+    hireDate:'',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
-    // Clear error when field is edited
+
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -37,129 +35,121 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({ employee, isEdit = false })
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
+
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
     if (!formData.position.trim()) newErrors.position = 'Position is required';
-    if (!formData.department.trim()) newErrors.department = 'Department is required';
-    if (!formData.joinDate) newErrors.joinDate = 'Join date is required';
+    if (!formData.hireDate) newErrors.hireDate = 'Hire date is required';
+    if (!formData.salary || isNaN(Number(formData.salary))) {
+      newErrors.salary = 'Valid salary is required';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
-    
-    // Simulate API delay
-    setTimeout(() => {
-      if (isEdit && employee) {
-        updateEmployee(employee.id, formData);
-      } else {
-        addEmployee(formData);
-      }
-      
-      setIsSubmitting(false);
-      navigate('/dashboard');
-    }, 1000);
+
+    const payload = {
+      ...formData,
+      salary: Number(formData.salary),
+    };
+
+    if (isEdit && employee) {
+      await updateEmployee(employee.id, payload);
+    } else {
+      await addEmployee(payload);
+    }
+
+    setIsSubmitting(false);
+    navigate('/dashboard');
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6">
-      <FormGroup>
-        <Input
-          label="Full Name"
-          name="name"
-          value={formData.name}
-          onChange={handleChange}
-          placeholder="Enter employee name"
-          error={errors.name}
-          required
-        />
-        
-        <Input
-          label="Email"
-          type="email"
-          name="email"
-          value={formData.email}
-          onChange={handleChange}
-          placeholder="Enter employee email"
-          error={errors.email}
-          required
-        />
-        
-        <Input
-          label="Position"
-          name="position"
-          value={formData.position}
-          onChange={handleChange}
-          placeholder="Enter job position"
-          error={errors.position}
-          required
-        />
-        
-        <Select
-          label="Department"
-          name="department"
-          value={formData.department}
-          onChange={handleChange}
-          error={errors.department}
-          options={[
-            { value: '', label: 'Select department' },
-            { value: 'Engineering', label: 'Engineering' },
-            { value: 'Marketing', label: 'Marketing' },
-            { value: 'Sales', label: 'Sales' },
-            { value: 'HR', label: 'HR' },
-            { value: 'Finance', label: 'Finance' },
-            { value: 'Operations', label: 'Operations' },
-          ]}
-          required
-        />
-        
-        <Input
-          label="Join Date"
-          type="date"
-          name="joinDate"
-          value={formData.joinDate}
-          onChange={handleChange}
-          error={errors.joinDate}
-          required
-        />
-        
-        <Input
-          label="Phone Number"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          placeholder="Enter phone number (optional)"
-        />
-        
-        <div className="flex justify-end space-x-4 mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/dashboard')}
-          >
-            Cancel
-          </Button>
-          
-          <Button
-            type="submit"
-            isLoading={isSubmitting}
-          >
-            {isEdit ? 'Update Employee' : 'Add Employee'}
-          </Button>
-        </div>
-      </FormGroup>
-    </form>
+      <form onSubmit={handleSubmit} className="bg-white shadow-md rounded-lg p-6">
+        <FormGroup>
+          <Input
+              label="First Name"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              placeholder="Enter first name"
+              error={errors.firstName}
+              required
+          />
+          <Input
+              label="Last Name"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              placeholder="Enter last name"
+              error={errors.lastName}
+              required
+          />
+          <Input
+              label="Email"
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter email"
+              error={errors.email}
+              required
+          />
+          <Input
+              label="Position"
+              name="position"
+              value={formData.position}
+              onChange={handleChange}
+              placeholder="Enter job position"
+              error={errors.position}
+              required
+          />
+          <Input
+              label="Hire Date"
+              name="hireDate"
+              type="date"
+              value={formData.hireDate}
+              onChange={handleChange}
+              error={errors.hireDate}
+              required
+          />
+
+          <Input
+              label="Salary"
+              name="salary"
+              type="number"
+              value={formData.salary}
+              onChange={handleChange}
+              placeholder="Enter salary"
+              error={errors.salary}
+              required
+          />
+
+          <div className="flex justify-end space-x-4 mt-6">
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate('/dashboard')}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isSubmitting}>
+              {isEdit ? 'Update Employee' : 'Add Employee'}
+            </Button>
+          </div>
+        </FormGroup>
+      </form>
   );
 };
 

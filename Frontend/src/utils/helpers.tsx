@@ -61,6 +61,8 @@ export async function updateData(url,data,token) {
 
 export function handleLogout(tokenName){
     localStorage.removeItem(tokenName);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
     window.location = "/";
 }
 
@@ -71,6 +73,8 @@ export const decodeToken =() => {
     }
     try {
         const decoded = jwtDecode(token);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         const { image, name, ...otherProperties } = decoded;
         return { image, name, ...otherProperties };
     } catch (error) {

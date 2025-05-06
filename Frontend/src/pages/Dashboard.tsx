@@ -17,12 +17,12 @@ const Dashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; // Number of employees per page
   
-  const filteredEmployees = employees.filter(
+  const filteredEmployees = employees?.filter(
     (employee) =>
-      employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.department.toLowerCase().includes(searchQuery.toLowerCase())
+      employee.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.lastName?.toLowerCase().includes(searchQuery.toLowerCase())||
+      employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      employee.position?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   // Calculate pagination values

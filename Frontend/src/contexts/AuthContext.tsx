@@ -1,7 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+//  axios instance (exported)
+export const axiosInstance = axios.create({
+  baseURL: API_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 interface User {
   id: string;
@@ -23,15 +33,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ Load and validate token
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("authToken");
 
-    if (storedUser && token) {
+    if (token) {
       try {
-        setUser(JSON.parse(storedUser));
+        const decodedToken = jwtDecode<{ exp: number }>(token);
+        const isTokenExpired = decodedToken.exp * 1000 < Date.now();
+
+        if (isTokenExpired) {
+          logout();
+        } else {
+          axiosInstance.defaults.headers["Authorization"] = `Bearer ${token}`;
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+        }
       } catch (error) {
-        console.error("Failed to parse user from localStorage", error);
+        console.error("Failed to decode token", error);
+        logout();
       }
     }
 
@@ -41,22 +63,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const res = await axiosInstance.post("/auth/login", { email, password });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        toast.error(errData.message || "Login failed");
-        return false;
-      }
-
-      const { token, user: userData } = await res.json();
+      const { token, user: userData } = res.data;
 
       localStorage.setItem("authToken", token);
       localStorage.setItem("user", JSON.stringify(userData));
+      axiosInstance.defaults.headers["Authorization"] = `Bearer ${token}`;
       setUser(userData);
       toast.success("Login successful");
       return true;
@@ -72,18 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (name: string, email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_URL}/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        toast.error(errData.message || "Registration failed");
-        return false;
-      }
-
+      await axiosInstance.post("/auth/signup", { name, email, password });
       toast.success("Registration successful. Please login.");
       return true;
     } catch (error) {
@@ -99,6 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
+    delete axiosInstance.defaults.headers["Authorization"];
     toast.info("You have been logged out");
   };
 

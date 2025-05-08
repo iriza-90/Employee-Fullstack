@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useEmployees } from '../contexts/EmployeeContext';
 import { useIsMobile } from '../hooks/use-mobile';
@@ -17,14 +16,17 @@ const Dashboard: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; // Number of employees per page
   
-  const filteredEmployees = employees?.filter(
-    (employee) =>
-      employee.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.lastName?.toLowerCase().includes(searchQuery.toLowerCase())||
-      employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.position?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
+  // Make sure employees is an array before calling .filter()
+  const filteredEmployees = Array.isArray(employees)
+    ? employees.filter(
+        (employee) =>
+          employee.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          employee.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          employee.position?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
+
   // Calculate pagination values
   const totalItems = filteredEmployees.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));

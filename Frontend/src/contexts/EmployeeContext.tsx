@@ -1,11 +1,20 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { axiosInstance } from "./AuthContext";
+import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
-import axios from "axios";
-import {fetchData, sendData, updateData} from "@/utils/helpers.tsx";
-import {servers} from "@/utils/api.tsx";
 
 export interface Employee {
-  id: string;
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  position: string;
+  salary: number;
+  hireDate: string;
+  userId: number;
+}
+
+interface EmployeePayload {
   firstName: string;
   lastName: string;
   email: string;
@@ -14,107 +23,119 @@ export interface Employee {
   hireDate: string;
 }
 
-
 interface EmployeeContextType {
   employees: Employee[];
-  addEmployee: (employee: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    position: string;
-    salary: number
-  }) => Promise<void>;
-  updateEmployee: (id: string, employee: Partial<Employee>) => Promise<void>;
-  deleteEmployee: (id: string) => Promise<void>;
-  getEmployee: (id: string) => Employee | undefined;
+  fetchEmployees: () => void;
+  addEmployee: (data: EmployeePayload) => Promise<void>;
+  updateEmployee: (id: number, data: EmployeePayload) => Promise<void>;
+  deleteEmployee: (id: number) => Promise<void>;
+  searchEmployees: (query: string) => Promise<void>;
   isLoading: boolean;
 }
 
 const EmployeeContext = createContext<EmployeeContextType | undefined>(undefined);
 
 export const EmployeeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const token = localStorage.getItem("authToken");
+  const fetchEmployees = async () => {
+    if (!user?.id) {
+      console.warn("Skipping fetch: no user ID");
+      return;
+    }
+  
+    setIsLoading(true);
+  
+    try {
+      const res = await axiosInstance.get("/employees");
+      console.log("Raw employee fetch response:", res.data);
+  
+      const employeesData = Array.isArray(res.data?.employees)
+        ? res.data.employees
+        : [];
+  
+      if (employeesData.length === 0) {
+        console.warn("No employees found or unexpected format:", res.data);
+      }
+  
+      setEmployees(employeesData);
+    } catch (error: any) {
+      console.error("Error fetching employees:", error);
+      toast.error(error?.response?.data?.message || "Could not fetch employees");
+      setEmployees([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const addEmployee = async (data: EmployeePayload) => {
+    try {
+      const res = await axiosInstance.post("/employees/create", data);
+      setEmployees(prev => [...prev, res.data]);
+      toast.success("Employee added successfully!");
+    } catch (error: any) {
+      console.error("Add employee failed:", error);
+      toast.error(error?.response?.data?.message || "Could not add employee");
+    }
+  };
+
+  const updateEmployee = async (id: number, data: EmployeePayload) => {
+    try {
+      const res = await axiosInstance.put(`/employees/update/${id}`, data);
+      setEmployees(prev => prev.map(emp => (emp.id === id ? res.data : emp)));
+      toast.success("Employee updated successfully!");
+    } catch (error: any) {
+      console.error("Update failed:", error);
+      toast.error(error?.response?.data?.message || "Could not update employee");
+    }
+  };
+
+  const deleteEmployee = async (id: number) => {
+    try {
+      await axiosInstance.delete(`/employees/delete/${id}`);
+      setEmployees(prev => prev.filter(emp => emp.id !== id));
+      toast.success("Employee deleted.");
+    } catch (error: any) {
+      console.error("Delete failed:", error);
+      toast.error(error?.response?.data?.message || "Could not delete employee");
+    }
+  };
+
+  const searchEmployees = async (query: string) => {
+    setIsLoading(true);
+    try {
+      const res = await axiosInstance.get(`/employees/search?q=${encodeURIComponent(query)}`);
+      setEmployees(Array.isArray(res.data) ? res.data : []);
+    } catch (error: any) {
+      console.error("Search failed:", error);
+      toast.error(error?.response?.data?.message || "Search failed");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadEmployees = async () => {
-      setIsLoading(true);
-      const result = await fetchData(`${servers.server1}/employees`, token);
-      if (result.data !== -1) {
-        setEmployees(result.data.employees); // Assuming backend returns `{ employees: [...] }`
-      } else {
-        toast.error(result.error);
-      }
-      setIsLoading(false);
-    };
-
-    loadEmployees();
-  }, [token]);
-
-  const addEmployee = async (employee: Omit<Employee, "id">) => {
-    try {
-      const result = await sendData(`${servers.server1}/employees/create`, employee, token);
-      if (result.data !== -1) {
-        setEmployees([...employees, result.data.employee]); // Assuming backend returns `{ employee: {...} }`
-        toast.success("Employee added successfully");
-        window.location.href = '/';
-      } else {
-        toast.error(result.error);
-      }
-    } catch (error) {
-      toast.error("An error occurred while adding the employee.");
+    if (user?.id) {
+      fetchEmployees();
     }
-  };
-
-  const updateEmployee = async (id: string, updatedFields: Partial<Employee>) => {
-    const result = await updateData(`${servers.server1}/employees/update/${id}`, updatedFields, token);
-    if (result.data !== -1) {
-      setEmployees(
-          employees.map((emp) =>
-              emp.id === id ? { ...emp, ...updatedFields } : emp
-          )
-      );
-      toast.success("Employee updated successfully");
-    } else {
-      toast.error(result.error);
-    }
-  };
-
-  const deleteEmployee = async (id: string) => {
-    try {
-      await axios.delete(`${servers.server1}/employees/delete/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setEmployees(employees.filter((emp) => emp.id !== id));
-      toast.success("Employee deleted successfully");
-    } catch (error) {
-      const errorMsg =
-          error.response?.data?.message || error.message || "Failed to delete employee";
-      toast.error(errorMsg);
-    }
-  };
-
-  const getEmployee = (id: string) => {
-    return employees.find((emp) => emp.id === id);
-  };
+  }, [user?.id]);
 
   return (
-      <EmployeeContext.Provider
-          value={{
-            employees,
-            addEmployee,
-            updateEmployee,
-            deleteEmployee,
-            getEmployee,
-            isLoading,
-          }}
-      >
-        {children}
-      </EmployeeContext.Provider>
+    <EmployeeContext.Provider
+      value={{
+        employees,
+        fetchEmployees,
+        addEmployee,
+        updateEmployee,
+        deleteEmployee,
+        searchEmployees,
+        isLoading,
+      }}
+    >
+      {children}
+    </EmployeeContext.Provider>
   );
 };
 

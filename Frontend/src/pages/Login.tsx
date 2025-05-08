@@ -14,12 +14,10 @@ const Login: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    console.log("useEffect triggered. user:", user, "submitted:", submitted);
     if (user && submitted) {
       navigate('/dashboard');
     }
   }, [user, submitted, navigate]);
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -50,41 +48,45 @@ const Login: React.FC = () => {
     setIsLoading(true);
     const success = await login(formData.email, formData.password);
     if (success) {
-      setSubmitted(true); // trigger useEffect when user becomes available
+      setSubmitted(true);
     }
     setIsLoading(false);
   };
 
   return (
-      <AuthLayout title="Sign in to your account" subtitle="Manage your employees effectively" type="login">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <Input
-              label="Email address"
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              error={errors.email}
-              autoComplete="email"
-              required
-          />
-          <Input
-              label="Password"
-              type="password"
-              name="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={handleChange}
-              error={errors.password}
-              autoComplete="current-password"
-              required
-          />
-          <Button type="submit" fullWidth isLoading={isLoading}>
-            Sign in
-          </Button>
-        </form>
-      </AuthLayout>
+    <AuthLayout
+      title="Sign in to your account"
+      subtitle="Legit Employee ~ Hub 😉"
+      type="login"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Input
+          label="Email address"
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          value={formData.email}
+          onChange={handleChange}
+          error={errors.email}
+          autoComplete="email"
+          required
+        />
+        <Input
+          label="Password"
+          type="password"
+          name="password"
+          placeholder="Enter your password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          autoComplete="current-password"
+          required
+        />
+        <Button type="submit" fullWidth isLoading={isLoading}>
+          Sign in
+        </Button>
+      </form>
+    </AuthLayout>
   );
 };
 
